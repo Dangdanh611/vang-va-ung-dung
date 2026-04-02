@@ -1,0 +1,1988 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VÀNG — Kim Loại Của Thế Kỷ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:ital,wght@0,200;0,300;0,400;0,500;1,200;1,300&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold-deep: #8B6914;
+    --gold-mid: #C9932A;
+    --gold-bright: #E8B84B;
+    --gold-light: #F5D380;
+    --gold-pale: #FDF0C0;
+    --dark-base: #0A0804;
+    --dark-mid: #120F06;
+    --dark-warm: #1C1609;
+    --dark-accent: #241D0C;
+    --text-primary: #F0E6C8;
+    --text-secondary: #C8B48A;
+    --text-muted: #8A7560;
+    --ink: #2A2215;
+    --cream: #FAF4E8;
+    --cream-mid: #F0E6D0;
+    --line: rgba(201,147,42,0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--dark-base);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright), var(--gold-light));
+    width: 0%;
+    z-index: 9999;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px var(--gold-bright);
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    padding: 1.2rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(20px);
+    background: rgba(10,8,4,0.7);
+    border-bottom: 1px solid var(--line);
+    transition: all 0.4s;
+  }
+
+  nav.scrolled {
+    padding: 0.8rem 3rem;
+    background: rgba(10,8,4,0.92);
+  }
+
+  .nav-logo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.3em;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 0; height: 1px;
+    background: var(--gold-bright);
+    transition: width 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--gold-bright); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    padding: 6rem 2rem 4rem;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,147,42,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(139,105,20,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 20%, rgba(232,184,75,0.06) 0%, transparent 60%);
+  }
+
+  .hero-ornament {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,147,42,0.08);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    animation: pulse-ring 6s ease-in-out infinite;
+  }
+
+  .hero-ornament:nth-child(2) {
+    width: 800px; height: 800px;
+    border-color: rgba(201,147,42,0.05);
+    animation-delay: 1.5s;
+  }
+
+  .hero-ornament:nth-child(3) {
+    width: 400px; height: 400px;
+    border-color: rgba(232,184,75,0.1);
+    animation-delay: 0.75s;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+    50% { transform: translate(-50%,-50%) scale(1.03); opacity: 0.5; }
+  }
+
+  .hero-symbol {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(5rem, 18vw, 14rem);
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold-bright) 30%, var(--gold-mid) 60%, var(--gold-deep) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 0 60px rgba(201,147,42,0.4));
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeUp 1s 0.3s forwards;
+  }
+
+  .hero-au {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    letter-spacing: 0.6em;
+    color: var(--gold-mid);
+    text-transform: uppercase;
+    margin-top: -0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.6s forwards;
+    position: relative; z-index: 2;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.5rem, 4vw, 2.8rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    line-height: 1.3;
+    opacity: 0;
+    animation: fadeUp 1s 0.9s forwards;
+    position: relative; z-index: 2;
+  }
+
+  .hero-divider {
+    width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+    margin: 2rem auto;
+    opacity: 0;
+    animation: fadeUp 1s 1.1s forwards;
+    position: relative; z-index: 2;
+  }
+
+  .hero-sub {
+    font-size: 0.85rem;
+    font-weight: 200;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0;
+    animation: fadeUp 1s 1.3s forwards;
+    position: relative; z-index: 2;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 2s forwards;
+    z-index: 2;
+  }
+
+  .scroll-indicator span {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 50px;
+    background: linear-gradient(to bottom, var(--gold-mid), transparent);
+    animation: scroll-anim 2s ease-in-out infinite;
+  }
+
+  @keyframes scroll-anim {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── PARTICLES ── */
+  .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--gold-bright);
+    border-radius: 50%;
+    animation: float-particle linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes float-particle {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
+
+  /* ── ARTICLE WRAPPER ── */
+  article {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 6rem 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .section.visible { opacity: 1; transform: translateY(0); }
+
+  .section-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-mid);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .section-tag::before {
+    content: '';
+    width: 30px; height: 1px;
+    background: var(--gold-mid);
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--gold-light);
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--gold-bright);
+  }
+
+  p {
+    font-size: 1.05rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    margin-bottom: 1.4rem;
+    line-height: 1.9;
+  }
+
+  p strong {
+    color: var(--gold-light);
+    font-weight: 500;
+  }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    margin: 3rem -2rem;
+    padding: 2.5rem 3rem;
+    border-left: 3px solid var(--gold-bright);
+    background: linear-gradient(135deg, rgba(201,147,42,0.07) 0%, rgba(139,105,20,0.04) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pull-quote::before {
+    content: '\201C';
+    position: absolute;
+    top: -1rem; left: 1.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 6rem;
+    color: var(--gold-deep);
+    line-height: 1;
+    opacity: 0.5;
+  }
+
+  .pull-quote p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.45rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-light);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── DATA CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 3rem 0;
+  }
+
+  .card {
+    background: linear-gradient(145deg, rgba(201,147,42,0.08), rgba(139,105,20,0.04));
+    border: 1px solid rgba(201,147,42,0.2);
+    padding: 1.8rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+
+  .card:hover::before { transform: translateX(0); }
+  .card:hover { border-color: rgba(201,147,42,0.4); transform: translateY(-3px); }
+
+  .card-value {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--gold-bright);
+    margin-bottom: 0.3rem;
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── WIDE CARDS ── */
+  .wide-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 3rem 0;
+  }
+
+  @media (max-width: 600px) { .wide-cards { grid-template-columns: 1fr; } }
+
+  .wide-card {
+    padding: 2rem;
+    background: rgba(201,147,42,0.05);
+    border: 1px solid rgba(201,147,42,0.15);
+    transition: all 0.3s;
+  }
+
+  .wide-card:hover { background: rgba(201,147,42,0.09); border-color: rgba(201,147,42,0.3); }
+
+  .wide-card h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--gold-light);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .wide-card h4 .dot {
+    width: 8px; height: 8px;
+    background: var(--gold-bright);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .wide-card p { font-size: 0.9rem; margin: 0; }
+
+  /* ── TIMELINE ── */
+  .timeline { margin: 3rem 0; position: relative; }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 80px; top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--gold-mid), var(--gold-deep), transparent);
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.6s ease;
+  }
+
+  .timeline-item.visible { opacity: 1; transform: translateX(0); }
+
+  .timeline-year {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gold-mid);
+    width: 70px;
+    flex-shrink: 0;
+    text-align: right;
+    padding-top: 0.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: 74px;
+    top: 0.4rem;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold-bright);
+    border: 2px solid var(--dark-base);
+    box-shadow: 0 0 10px rgba(232,184,75,0.5);
+    flex-shrink: 0;
+  }
+
+  .timeline-content {
+    flex: 1;
+    padding-left: 1.5rem;
+  }
+
+  .timeline-content h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--gold-light);
+    margin-bottom: 0.3rem;
+  }
+
+  .timeline-content p {
+    font-size: 0.88rem;
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── PROPERTY TABLE ── */
+  .prop-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  .prop-table th {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-mid);
+    padding: 0.8rem 1.2rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(201,147,42,0.3);
+    background: rgba(201,147,42,0.06);
+  }
+
+  .prop-table td {
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid rgba(201,147,42,0.08);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  .prop-table tr:hover td { background: rgba(201,147,42,0.04); }
+
+  .prop-table td:first-child {
+    color: var(--gold-light);
+    font-weight: 400;
+    width: 45%;
+  }
+
+  /* ── COUNTRY BADGES ── */
+  .country-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.2rem;
+    margin: 2.5rem 0;
+  }
+
+  .country-badge {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(201,147,42,0.06), rgba(139,105,20,0.03));
+    border: 1px solid rgba(201,147,42,0.12);
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .country-badge:hover {
+    border-color: rgba(201,147,42,0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .country-flag { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+
+  .country-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gold-light);
+    margin-bottom: 0.3rem;
+  }
+
+  .country-info { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+
+  /* ── APPLICATION GRID ── */
+  .app-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin: 2rem 0;
+  }
+
+  .app-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding: 2rem 0;
+    border-bottom: 1px solid rgba(201,147,42,0.1);
+    transition: all 0.3s;
+  }
+
+  .app-item:hover { padding-left: 0.5rem; }
+
+  .app-number {
+    font-family: 'Cinzel', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: rgba(201,147,42,0.15);
+    line-height: 1;
+    min-width: 3rem;
+    text-align: right;
+  }
+
+  .app-content h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--gold-light);
+    margin-bottom: 0.5rem;
+  }
+
+  .app-content p { font-size: 0.88rem; margin: 0; }
+
+  /* ── GOLD TYPES ── */
+  .gold-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 2.5rem 0;
+  }
+
+  .gold-type {
+    padding: 2rem;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+
+  .gold-type:hover { transform: translateY(-4px); }
+
+  .gold-type.yellow { border-color: rgba(232,184,75,0.3); background: rgba(232,184,75,0.05); }
+  .gold-type.white  { border-color: rgba(200,210,220,0.2); background: rgba(200,210,220,0.03); }
+  .gold-type.rose   { border-color: rgba(230,150,120,0.3); background: rgba(230,150,120,0.05); }
+  .gold-type.green  { border-color: rgba(150,200,120,0.2); background: rgba(150,200,120,0.03); }
+
+  .gold-type-swatch {
+    width: 40px; height: 6px;
+    border-radius: 3px;
+    margin-bottom: 1rem;
+  }
+
+  .gold-type.yellow .gold-type-swatch { background: linear-gradient(90deg, #C9932A, #F5D380); }
+  .gold-type.white  .gold-type-swatch { background: linear-gradient(90deg, #C0C8D0, #E8F0F5); }
+  .gold-type.rose   .gold-type-swatch { background: linear-gradient(90deg, #C07055, #E8A890); }
+  .gold-type.green  .gold-type-swatch { background: linear-gradient(90deg, #88A050, #B8D088); }
+
+  .gold-type h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--gold-light);
+    margin-bottom: 0.5rem;
+  }
+
+  .gold-type p { font-size: 0.85rem; margin: 0; }
+
+  /* ── KARAT VISUAL ── */
+  .karat-bar {
+    display: flex;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.8rem 0 1.5rem;
+  }
+
+  .karat-fill {
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright));
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.8rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--dark-base);
+    font-weight: 700;
+    transition: width 1s ease;
+  }
+
+  .karat-rest {
+    background: rgba(255,255,255,0.05);
+    flex: 1;
+  }
+
+  .karat-row { margin-bottom: 0.5rem; }
+  .karat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 6rem;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    position: relative;
+  }
+
+  footer::before {
+    content: 'Au';
+    font-family: 'Cinzel', serif;
+    font-size: 8rem;
+    font-weight: 700;
+    color: rgba(201,147,42,0.04);
+    position: absolute;
+    top: 1rem; left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .footer-ornament {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.5em;
+    color: var(--gold-mid);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .footer-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .footer-copy {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+  }
+
+  /* ── HORIZONTAL RULE ── */
+  .ornamental-hr {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 3rem 0;
+  }
+
+  .ornamental-hr::before,
+  .ornamental-hr::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep));
+  }
+
+  .ornamental-hr::after {
+    background: linear-gradient(90deg, var(--gold-deep), transparent);
+  }
+
+  .ornamental-hr span {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold-mid);
+  }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(232,184,75,0.1), rgba(201,147,42,0.05));
+    border: 1px solid rgba(232,184,75,0.25);
+    padding: 2rem 2.5rem;
+    margin: 2.5rem 0;
+    position: relative;
+  }
+
+  .highlight-box::before {
+    content: '◆';
+    position: absolute;
+    top: -0.6rem; left: 2rem;
+    color: var(--gold-bright);
+    background: var(--dark-base);
+    padding: 0 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .highlight-box p { margin: 0; color: var(--gold-light); font-weight: 400; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    nav.scrolled { padding: 0.7rem 1.5rem; }
+    .nav-links { display: none; }
+    article { padding: 0 1.2rem; }
+    .pull-quote { margin: 2rem -1.2rem; padding: 2rem; }
+    .timeline::before { left: 60px; }
+    .timeline-year { width: 50px; font-size: 0.65rem; }
+    .timeline-dot { left: 54px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark-base); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-deep); border-radius: 3px; }
+
+  /* Selection */
+  ::selection { background: rgba(201,147,42,0.3); color: var(--gold-light); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<nav id="navbar">
+  <div class="nav-logo">Aurum</div>
+  <ul class="nav-links">
+    <li><a href="#lich-su">Lịch Sử</a></li>
+    <li><a href="#tinh-chat">Tính Chất</a></li>
+    <li><a href="#phan-loai">Phân Loại</a></li>
+    <li><a href="#quoc-te">Quốc Tế</a></li>
+    <li><a href="#ung-dung">Ứng Dụng</a></li>
+    <li><a href="#mo-rong">Mở Rộng</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-ornament"></div>
+  <div class="hero-ornament"></div>
+  <div class="hero-ornament"></div>
+  <div class="particles" id="particles"></div>
+
+  <div class="hero-symbol">Au</div>
+  <div class="hero-au">Số nguyên tử 79 · Aurum</div>
+  <h1 class="hero-title">Vàng — Kim Loại Của Thiên Niên Kỷ</h1>
+  <div class="hero-divider"></div>
+  <p class="hero-sub">Từ các pharaoh Ai Cập đến bộ vi xử lý hiện đại</p>
+
+  <div class="scroll-indicator">
+    <span>Cuộn xuống</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<article>
+
+  <!-- SECTION 1: LỊCH SỬ -->
+  <section class="section" id="lich-su">
+    <div class="section-tag">01 — Nguồn Gốc</div>
+    <h2 class="section-title">Lịch Sử <em>Hàng Nghìn Năm</em> Của Vàng</h2>
+
+    <p>Vàng là một trong những kim loại đầu tiên mà con người phát hiện và sử dụng. Không bị oxy hóa, không gỉ sét, luôn sáng bóng — vàng tồn tại trong thiên nhiên ở dạng nguyên chất, điều khiến người thời cổ đại tin rằng đây là vật liệu của thần thánh.</p>
+
+    <p>Các nền văn minh từ Mesopotamia, Ai Cập, Hy Lạp, La Mã đến Trung Quốc và Maya đều tôn thờ vàng như biểu tượng của quyền năng, sự bất tử và ánh sáng thiêng liêng. <strong>Pharaoh Tutankhamun</strong> được chôn cất trong chiếc quan tài nặng 110 kg làm hoàn toàn từ vàng nguyên chất — một trong những kho báu lớn nhất từng được khai quật.</p>
+
+    <div class="pull-quote">
+      <p>"Vàng không bao giờ già. Đó là lý do con người đã yêu mến nó suốt hàng nghìn năm — và sẽ còn yêu mến mãi mãi."</p>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-year">~6000<br>TCN</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Phát hiện đầu tiên</h4>
+          <p>Người ở vùng Lưỡng Hà và Balkan tìm thấy vàng sa khoáng dọc các con sông. Vàng được dùng làm đồ trang sức và vật phẩm tế lễ.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~3000<br>TCN</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Văn minh Ai Cập cổ đại</h4>
+          <p>Ai Cập trở thành cường quốc vàng đầu tiên. Người Ai Cập khai thác vàng từ sa mạc Nubia và dùng làm tiền tệ, trang trí lăng mộ pharaoh.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">~700<br>TCN</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Đồng tiền vàng đầu tiên</h4>
+          <p>Vương quốc Lydia (nay là Thổ Nhĩ Kỳ) đúc những đồng tiền vàng đầu tiên trong lịch sử — bước ngoặt cách mạng hóa thương mại toàn cầu.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1848</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Cơn sốt vàng California</h4>
+          <p>Phát hiện vàng ở Sutter's Mill châm ngòi cuộc di dân lịch sử với hơn 300.000 người đổ về California trong chưa đầy 3 năm.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1944</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Hệ thống Bretton Woods</h4>
+          <p>44 quốc gia đồng ý neo đồng đô la Mỹ vào vàng theo tỷ lệ 35 USD/ounce — đặt nền tảng cho trật tự tài chính quốc tế hiện đại.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">1971</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Nixon chấm dứt bản vị vàng</h4>
+          <p>Tổng thống Nixon tuyên bố đồng USD không còn đổi được lấy vàng — kết thúc kỷ nguyên bản vị vàng, mở ra thế giới tiền tệ fiat hiện đại.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-year">Nay</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <h4>Vàng trong thế kỷ 21</h4>
+          <p>Giá vàng vượt 2.000 USD/ounce. Vàng được dùng trong điện tử, y tế, không gian vũ trụ và vẫn là tài sản trú ẩn số một toàn cầu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TÊN GỌI -->
+  <section class="section" id="ten-goi">
+    <div class="section-tag">02 — Danh Xưng</div>
+    <h2 class="section-title">Những <em>Tên Gọi</em> Của Vàng</h2>
+
+    <p>Vàng được gọi bằng nhiều danh xưng khác nhau tùy theo văn hóa, lĩnh vực và mục đích sử dụng. Mỗi tên gọi phản ánh một khía cạnh độc đáo của kim loại quý giá này.</p>
+
+    <div class="wide-cards">
+      <div class="wide-card">
+        <h4><span class="dot"></span> Một Lượng Vàng</h4>
+        <p>Đơn vị đo lường vàng truyền thống tại Việt Nam. <strong>1 lượng = 37,5 gam</strong>. Tương đương khoảng 1,2 ounce troy. Đây là đơn vị phổ biến nhất trong giao dịch vàng miếng tại Việt Nam.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span> Một Chỉ Vàng</h4>
+        <p>Đơn vị nhỏ hơn một lượng. <strong>1 chỉ = 1/10 lượng = 3,75 gam</strong>. Thường dùng trong mua bán trang sức, nhẫn cưới, dây chuyền bình dân.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span> Ounce Troy (Ozt)</h4>
+        <p>Đơn vị chuẩn quốc tế trong giao dịch vàng. <strong>1 ounce troy = 31,1035 gam</strong>. Giá vàng thế giới luôn được niêm yết theo đơn vị này.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span> Aurum (Au)</h4>
+        <p>Ký hiệu hóa học và tên gọi Latin của vàng. Từ "aurum" có nghĩa là "ánh bình minh" — phản ánh màu sắc rực rỡ đặc trưng của vàng.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span> Kim (金)</h4>
+        <p>Chữ Hán của vàng, cũng dùng chỉ chung kim loại. Trong văn hóa Hán-Việt, "hoàng kim" (vàng vàng) hoặc "bạch kim" (vàng trắng) phân biệt màu sắc.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span> Gold / Or / Gold / Gold</h4>
+        <p>"Gold" trong tiếng Anh, "Or" tiếng Pháp, "Gold" tiếng Đức, "Oro" tiếng Tây Ban Nha. Tất cả bắt nguồn từ gốc Proto-Germanic mang nghĩa "màu vàng rực".</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>Tại Việt Nam, vàng SJC (Saigon Jewelry Company) là thương hiệu vàng miếng tiêu chuẩn quốc gia. Giá vàng SJC thường cao hơn giá vàng thế giới từ 3–5 triệu đồng/lượng do chênh lệch thuế và chính sách quản lý.</p>
+    </div>
+  </section>
+
+  <!-- TÍNH CHẤT -->
+  <section class="section" id="tinh-chat">
+    <div class="section-tag">03 — Khoa Học</div>
+    <h2 class="section-title">Tính Chất <em>Vật Lý & Hóa Học</em></h2>
+
+    <p>Vàng sở hữu tổ hợp tính chất vật lý và hóa học cực kỳ độc đáo — đây là lý do tại sao không có kim loại nào khác có thể thay thế hoàn toàn vàng trong nhiều ứng dụng.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-value">79</div>
+        <div class="card-label">Số nguyên tử</div>
+        <div class="card-desc">Nhóm 11, Chu kỳ 6 trong bảng tuần hoàn Mendeleev</div>
+      </div>
+      <div class="card">
+        <div class="card-value">196,97</div>
+        <div class="card-label">Khối lượng nguyên tử (u)</div>
+        <div class="card-desc">Kim loại nặng hơn hầu hết các nguyên tố phổ biến</div>
+      </div>
+      <div class="card">
+        <div class="card-value">19,3</div>
+        <div class="card-label">Khối lượng riêng (g/cm³)</div>
+        <div class="card-desc">Nặng gần gấp đôi chì, gấp 2,4 lần sắt</div>
+      </div>
+      <div class="card">
+        <div class="card-value">1064°C</div>
+        <div class="card-label">Điểm nóng chảy</div>
+        <div class="card-desc">Điểm sôi 2.856°C — ổn định ở nhiệt độ rất cao</div>
+      </div>
+      <div class="card">
+        <div class="card-value">45,2</div>
+        <div class="card-label">Độ dẫn nhiệt (W/m·K)</div>
+        <div class="card-desc">Dẫn nhiệt và điện xuất sắc, chỉ sau bạc và đồng</div>
+      </div>
+      <div class="card">
+        <div class="card-value">1 gam</div>
+        <div class="card-label">Có thể dát thành 1m²</div>
+        <div class="card-desc">Kim loại dát mỏng nhất, kéo dài nhất thế giới</div>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light);margin:2rem 0 1rem;">Tính Chất Hóa Học</h3>
+
+    <table class="prop-table">
+      <thead>
+        <tr>
+          <th>Tính Chất</th>
+          <th>Chi Tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Độ bền hóa học</td><td>Không phản ứng với oxy, nước, hầu hết axit thông thường — bền hóa học nhất trong các kim loại thường gặp</td></tr>
+        <tr><td>Tan trong nước cường toan</td><td>Chỉ tan trong hỗn hợp HCl:HNO₃ = 3:1 (nước cường toan / aqua regia) và dung dịch cyanide kiềm</td></tr>
+        <tr><td>Trạng thái oxy hóa</td><td>Phổ biến nhất: Au⁺¹ và Au⁺³. Ít gặp: Au⁰ (kim loại thuần), Au⁻¹</td></tr>
+        <tr><td>Cấu hình điện tử</td><td>[Xe] 4f¹⁴ 5d¹⁰ 6s¹ — lớp vỏ d đầy đủ tạo nên tính trơ hóa học đặc biệt</td></tr>
+        <tr><td>Hiệu ứng tương đối</td><td>Do tốc độ electron lớp 6s tiếp cận vận tốc ánh sáng, vàng hấp thụ ánh sáng xanh và phản xạ màu vàng — giải thích màu sắc độc đáo</td></tr>
+        <tr><td>Tính dẻo — dát mỏng</td><td>1 ounce vàng có thể kéo thành sợi dài 80 km, hoặc dát thành lá mỏng 0,00001 mm</td></tr>
+        <tr><td>Đồng vị bền</td><td>Chỉ có 1 đồng vị bền: ¹⁹⁷Au. Các đồng vị phóng xạ nhân tạo dùng trong y học hạt nhân</td></tr>
+        <tr><td>Nguồn gốc vũ trụ</td><td>Hình thành từ vụ va chạm giữa các sao neutron (kilonovae) — tất cả vàng trên Trái Đất đến từ thiên thạch rơi xuống</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ornamental-hr"><span>✦</span></div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light);margin:2rem 0 1rem;">Tính Chất Vật Lý Nổi Bật</h3>
+
+    <p><strong>Màu sắc:</strong> Vàng có màu vàng óng đặc trưng không thể nhầm lẫn. Màu này xuất phát từ hiệu ứng tương đối luận trong cơ học lượng tử — khi các electron chuyển động gần vận tốc ánh sáng, khoảng cách năng lượng giữa các obital thay đổi, khiến vàng hấp thụ ánh sáng xanh và phản xạ ánh sáng vàng.</p>
+
+    <p><strong>Độ dẻo:</strong> Vàng là kim loại dẻo nhất từng biết đến. Một gam vàng có thể được dát thành tấm mỏng 1 m², hay kéo thành sợi dài hàng chục km. Lá vàng mỏng đến mức ánh sáng có thể xuyên qua với màu xanh lam nhạt.</p>
+
+    <p><strong>Độ dẫn điện:</strong> Xếp thứ 3 sau bạc và đồng. Điều quan trọng là vàng không bị oxy hóa, nên tiếp xúc điện luôn ổn định — lý do vàng không thể thiếu trong linh kiện điện tử cao cấp.</p>
+  </section>
+
+  <!-- PHÂN LOẠI -->
+  <section class="section" id="phan-loai">
+    <div class="section-tag">04 — Phân Loại</div>
+    <h2 class="section-title">Các <em>Loại Vàng</em> Phổ Biến</h2>
+
+    <p>Vàng tồn tại dưới nhiều hình thức và phân loại khác nhau, tùy theo thành phần hợp kim, độ tinh khiết và màu sắc. Mỗi loại phục vụ các mục đích riêng biệt trong trang sức, công nghiệp và đầu tư.</p>
+
+    <div class="gold-types">
+      <div class="gold-type yellow">
+        <div class="gold-type-swatch"></div>
+        <h4>Vàng Vàng (Yellow Gold)</h4>
+        <p>Vàng nguyên chất pha bạc và đồng. Màu sắc truyền thống, dễ dát và chế tác. Phổ biến nhất trong trang sức cổ truyền châu Á.</p>
+      </div>
+      <div class="gold-type white">
+        <div class="gold-type-swatch"></div>
+        <h4>Vàng Trắng (White Gold)</h4>
+        <p>Vàng pha palladium, nickel hoặc bạch kim. Màu trắng sang trọng, thường phủ rhodium để tăng độ bóng. Ưa chuộng trong nhẫn đính hôn hiện đại.</p>
+      </div>
+      <div class="gold-type rose">
+        <div class="gold-type-swatch"></div>
+        <h4>Vàng Hồng (Rose Gold)</h4>
+        <p>Vàng pha đồng (thường 75% vàng, 25% đồng). Tạo màu hồng đào lãng mạn. Xu hướng trang sức thịnh hành từ thế kỷ 19 đến nay.</p>
+      </div>
+      <div class="gold-type green">
+        <div class="gold-type-swatch"></div>
+        <h4>Vàng Xanh (Green Gold)</h4>
+        <p>Vàng pha bạc cao (Electrum). Có màu xanh lá nhạt hiếm gặp. Dùng trong trang sức nghệ thuật cao cấp và chế tác thủ công.</p>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light);margin:3rem 0 1.5rem;">Độ Tinh Khiết — Hệ Thống Karat</h3>
+
+    <p>Độ tinh khiết của vàng được đo bằng <strong>karat (K)</strong> — thang đo từ 1 đến 24, trong đó 24K là vàng nguyên chất 99,9%. Tại Việt Nam còn dùng thang phần nghìn (‰).</p>
+
+    <div class="karat-row">
+      <div class="karat-label">24K — Vàng nguyên chất (99,9%)</div>
+      <div class="karat-bar"><div class="karat-fill" style="width:99.9%">24K</div></div>
+    </div>
+    <div class="karat-row">
+      <div class="karat-label">22K — Vàng cao cấp (91,6%)</div>
+      <div class="karat-bar"><div class="karat-fill" style="width:91.6%">22K</div><div class="karat-rest"></div></div>
+    </div>
+    <div class="karat-row">
+      <div class="karat-label">18K — Vàng trang sức phổ biến (75%)</div>
+      <div class="karat-bar"><div class="karat-fill" style="width:75%">18K</div><div class="karat-rest"></div></div>
+    </div>
+    <div class="karat-row">
+      <div class="karat-label">14K — Vàng bền, giá hợp lý (58,3%)</div>
+      <div class="karat-bar"><div class="karat-fill" style="width:58.3%">14K</div><div class="karat-rest"></div></div>
+    </div>
+    <div class="karat-row">
+      <div class="karat-label">10K — Vàng phổ thông (41,7%)</div>
+      <div class="karat-bar"><div class="karat-fill" style="width:41.7%">10K</div><div class="karat-rest"></div></div>
+    </div>
+
+    <div class="ornamental-hr" style="margin-top:3rem"><span>✦</span></div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light);margin:2rem 0 1rem;">Vàng Theo Hình Thức</h3>
+    <div class="wide-cards">
+      <div class="wide-card"><h4><span class="dot"></span>Vàng Miếng / Thỏi</h4><p>Dạng đầu tư thuần tuý. Chuẩn quốc tế 400 ounce troy (12,4 kg). Việt Nam phổ biến miếng 1 lượng, 1 chỉ, 5 chỉ nhãn hiệu SJC.</p></div>
+      <div class="wide-card"><h4><span class="dot"></span>Vàng Trang Sức</h4><p>Hợp kim với các kim loại khác để tăng độ cứng và màu sắc. Chiếm khoảng 50% lượng vàng tiêu thụ toàn cầu mỗi năm.</p></div>
+      <div class="wide-card"><h4><span class="dot"></span>Vàng Lá (Gold Leaf)</h4><p>Mỏng đến 0,1 micron. Dùng trong mạ vàng kiến trúc, nghệ thuật truyền thống, sơn dầu và ẩm thực cao cấp.</p></div>
+      <div class="wide-card"><h4><span class="dot"></span>Vàng Nano</h4><p>Hạt vàng kích thước nano mét. Có màu sắc khác nhau (đỏ, tím, xanh) tùy kích thước. Ứng dụng trong y học chẩn đoán và trị liệu.</p></div>
+    </div>
+  </section>
+
+  <!-- QUỐC TẾ -->
+  <section class="section" id="quoc-te">
+    <div class="section-tag">05 — Địa Chính Trị</div>
+    <h2 class="section-title">Vàng & <em>Các Quốc Gia</em> Thế Giới</h2>
+
+    <p>Vàng từ lâu không chỉ là kim loại quý — nó là công cụ địa chính trị, nền tảng tiền tệ và dự trữ chiến lược của mọi cường quốc. Quốc gia nào nắm nhiều vàng, quốc gia đó có lợi thế trong thương lượng quốc tế.</p>
+
+    <div class="pull-quote">
+      <p>"Vàng là tiền tệ duy nhất không phải là nợ của ai. Đó là lý do các ngân hàng trung ương luôn giữ nó."</p>
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--gold-light);margin:2rem 0 1.5rem;">Top Quốc Gia Dự Trữ Vàng Lớn Nhất</h3>
+
+    <div class="country-grid">
+      <div class="country-badge">
+        <span class="country-flag">🇺🇸</span>
+        <div class="country-name">Hoa Kỳ</div>
+        <div class="country-info">~8.133 tấn<br>Fort Knox &amp; NY Fed</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇩🇪</span>
+        <div class="country-name">Đức</div>
+        <div class="country-info">~3.352 tấn<br>Bundesbank</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇮🇹</span>
+        <div class="country-name">Ý</div>
+        <div class="country-info">~2.452 tấn<br>Banca d'Italia</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇫🇷</span>
+        <div class="country-name">Pháp</div>
+        <div class="country-info">~2.437 tấn<br>Banque de France</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇷🇺</span>
+        <div class="country-name">Nga</div>
+        <div class="country-info">~2.332 tấn<br>Ngân hàng Trung ương</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇨🇳</span>
+        <div class="country-name">Trung Quốc</div>
+        <div class="country-info">~2.235 tấn<br>PBoC (có thể cao hơn)</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇨🇭</span>
+        <div class="country-name">Thụy Sĩ</div>
+        <div class="country-info">~1.040 tấn<br>SNB</div>
+      </div>
+      <div class="country-badge">
+        <span class="country-flag">🇮🇳</span>
+        <div class="country-name">Ấn Độ</div>
+        <div class="country-info">~803 tấn<br>Nhu cầu dân gian #1 TG</div>
+      </div>
+    </div>
+
+    <p>Mỹ nắm giữ hơn 70% dự trữ ngoại hối dưới dạng vàng — tỷ lệ cao nhất thế giới — phản ánh lịch sử lâu đời với bản vị vàng. Trong khi đó, Trung Quốc liên tục tăng mua vàng từ 2022 như chiến lược phi đô la hóa.</p>
+
+    <div class="highlight-box">
+      <p><strong>Việt Nam:</strong> Ngân hàng Nhà nước Việt Nam dự trữ khoảng 10 tấn vàng chính thức. Tuy nhiên, ước tính người dân Việt Nam đang cất giữ từ <strong>400–500 tấn vàng</strong> trong nhà — một trong những tỷ lệ tiết kiệm vàng tư nhân cao nhất châu Á.</p>
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--gold-light);margin:2.5rem 0 1rem;">Các Sự Kiện Địa Chính Trị Quan Trọng</h3>
+
+    <div class="app-list">
+      <div class="app-item">
+        <div class="app-number">01</div>
+        <div class="app-content">
+          <h4>Cơn Sốt Vàng California (1848–1855)</h4>
+          <p>Phát hiện vàng tại Sutter's Mill biến California từ vùng đất hoang thành tiểu bang đông dân nhất nước Mỹ trong vòng 7 năm. Khai thác được ước tính 750.000 pound vàng, tương đương 16 tỷ USD ngày nay.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">02</div>
+        <div class="app-content">
+          <h4>Hệ Thống Bretton Woods (1944–1971)</h4>
+          <p>Hội nghị 44 quốc gia tại Bretton Woods (Mỹ) thiết lập USD làm tiền tệ dự trữ thế giới, neo vào vàng tỷ lệ 35 USD/ounce. Hệ thống này định hình trật tự tài chính toàn cầu suốt 27 năm.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">03</div>
+        <div class="app-content">
+          <h4>Nga &amp; Trung Quốc Phi Đô La Hóa</h4>
+          <p>Từ 2014, Nga đã bán gần hết trái phiếu Mỹ và dùng vàng thay thế. Cả hai nước cùng thúc đẩy thanh toán quốc tế bằng vàng để giảm phụ thuộc vào USD — xu hướng địa chính trị quan trọng nhất thập kỷ này.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">04</div>
+        <div class="app-content">
+          <h4>Đợt Tăng Giá Lịch Sử 2020–2024</h4>
+          <p>COVID-19 và lạm phát toàn cầu đẩy vàng lên mức kỷ lục 2.400 USD/ounce năm 2024. Các ngân hàng trung ương mua vàng với tốc độ cao nhất 55 năm qua, đặc biệt các nền kinh tế mới nổi.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ỨNG DỤNG -->
+  <section class="section" id="ung-dung">
+    <div class="section-tag">06 — Thực Tiễn</div>
+    <h2 class="section-title">Ý Nghĩa & <em>Ứng Dụng</em> Trong Thực Tế</h2>
+
+    <p>Vàng không chỉ là biểu tượng của sự giàu có. Từ vệ tinh vũ trụ đến thuốc điều trị ung thư, từ chip bán dẫn đến nha khoa — vàng hiện diện trong hầu hết mọi ngành công nghiệp quan trọng của thế kỷ 21.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-value">50%</div>
+        <div class="card-label">Trang sức toàn cầu</div>
+        <div class="card-desc">Nhu cầu trang sức chiếm nửa lượng vàng tiêu thụ hàng năm</div>
+      </div>
+      <div class="card">
+        <div class="card-value">~320</div>
+        <div class="card-label">Tấn/năm cho điện tử</div>
+        <div class="card-desc">Mỗi smartphone chứa ~0,03g vàng trong mạch vi xử lý</div>
+      </div>
+      <div class="card">
+        <div class="card-value">~75</div>
+        <div class="card-label">Tấn/năm cho y tế</div>
+        <div class="card-desc">Nha khoa, thiết bị cấy ghép và liệu pháp ung thư</div>
+      </div>
+    </div>
+
+    <div class="app-list">
+      <div class="app-item">
+        <div class="app-number">01</div>
+        <div class="app-content">
+          <h4>Trang Sức & Nghệ Thuật</h4>
+          <p>Từ nhẫn cưới đến tượng điêu khắc nghìn năm tuổi, vàng là vật liệu nghệ thuật bền bỉ nhất. Kỹ thuật mạ vàng và dát vàng được ứng dụng trong kiến trúc (mái chùa Vàng ở Myanmar), nghệ thuật tranh sơn mài Nhật Bản (Kintsugi) và trang trí nội thất xa xỉ.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">02</div>
+        <div class="app-content">
+          <h4>Điện Tử & Công Nghệ Cao</h4>
+          <p>Vàng phủ các chân tiếp xúc vi mạch, đầu cắm USB-C, bộ vi xử lý CPU cao cấp, kết nối trong máy tính lượng tử và vệ tinh. Điện thoại thông minh, máy tính bảng và máy chủ đám mây đều cần vàng để đảm bảo tiếp điểm điện không bị ăn mòn.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">03</div>
+        <div class="app-content">
+          <h4>Y Học & Sinh Học</h4>
+          <p>Răng giả vàng dùng từ thời La Mã. Ngày nay, hạt vàng nano được dùng trong chẩn đoán ung thư (xét nghiệm lateral flow), liệu pháp quang nhiệt (đốt tế bào ung thư bằng laser), cấy ghép ốc tai điện tử, và stent mạch vành cao cấp. Muối vàng từng là thuốc viêm khớp.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">04</div>
+        <div class="app-content">
+          <h4>Không Gian Vũ Trụ</h4>
+          <p>NASA phủ vàng lên kính thiên văn James Webb và mũ che mặt phi hành gia để phản xạ bức xạ tử ngoại. Vàng cũng bảo vệ mạch điện vệ tinh khỏi bức xạ vũ trụ. Mỗi bộ đồ vũ trụ Apollo chứa khoảng 0,49 gram vàng.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">05</div>
+        <div class="app-content">
+          <h4>Tài Chính & Đầu Tư</h4>
+          <p>Vàng là tài sản trú ẩn an toàn trong thời kỳ khủng hoảng. ETF vàng (Exchange-Traded Fund) cho phép đầu tư vàng không cần cất giữ vật chất. Hợp đồng tương lai vàng giao dịch hàng nghìn tỷ USD mỗi năm trên COMEX, LBMA và SGX.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">06</div>
+        <div class="app-content">
+          <h4>Ẩm Thực Cao Cấp</h4>
+          <p>Vàng lá và bột vàng được chứng nhận an toàn thực phẩm (E175 tại EU). Xuất hiện trong cocktail xa xỉ, chocolate cao cấp, sushi Nhật Bản và thậm chí pizza "Gold Experience" tại các nhà hàng 5 sao. Vàng không có vị và không bị tiêu hóa.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">07</div>
+        <div class="app-content">
+          <h4>Xây Dựng & Kiến Trúc</h4>
+          <p>Mái vàng (gold roofing) từng là đặc quyền của hoàng gia. Ngày nay, kính phủ vàng mỏng dùng trong tòa nhà thương mại để lọc ánh sáng và cách nhiệt. Lá vàng trang trí mặt tiền khách sạn, casino và công trình biểu tượng như Chùa Shwedagon ở Yangon.</p>
+        </div>
+      </div>
+      <div class="app-item">
+        <div class="app-number">08</div>
+        <div class="app-content">
+          <h4>Năng Lượng & Môi Trường</h4>
+          <p>Xúc tác nano vàng được dùng để xử lý ô nhiễm không khí (oxi hóa CO thành CO₂ ở nhiệt độ thấp), trong pin nhiên liệu thế hệ mới và các phản ứng hóa học xanh. Vàng cũng là lớp phủ cho pin quang điện chuyên dụng vũ trụ.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MỞ RỘNG -->
+  <section class="section" id="mo-rong">
+    <div class="section-tag">07 — Góc Nhìn Mở Rộng</div>
+    <h2 class="section-title">Những <em>Khám Phá</em> Thú Vị Về Vàng</h2>
+
+    <div class="wide-cards">
+      <div class="wide-card">
+        <h4><span class="dot"></span>Vàng Từ Ngôi Sao Chết</h4>
+        <p>Khoa học xác nhận: mọi vàng trên Trái Đất hình thành từ vụ va chạm các sao neutron (kilonovae) hàng tỷ năm trước. Chiếc nhẫn vàng bạn đang đeo thực sự là mảnh vỡ của một ngôi sao chết từ thời vũ trụ còn non trẻ.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span>Vàng Trong Nước Biển</h4>
+        <p>Đại dương thế giới chứa ước tính 20 triệu tấn vàng hòa tan — nhưng nồng độ chỉ 13 phần nghìn tỷ, khiến khai thác không kinh tế. Nếu chiết xuất được, mỗi người trên Trái Đất sẽ nhận 3 kg vàng.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span>Vàng Sinh Học</h4>
+        <p>Vi khuẩn <em>Cupriavidus metallidurans</em> có thể "ăn" ion vàng độc hại và tiết ra hạt vàng nhỏ. Kỹ thuật sinh học này đang được nghiên cứu để khai thác vàng từ dung dịch điện tử phế thải.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span>Tâm Lý Học của Vàng</h4>
+        <p>Nghiên cứu tâm lý cho thấy con người bẩm sinh bị thu hút bởi màu vàng óng ánh — có thể do tiến hóa liên kết với ánh mặt trời và sức khỏe. Màu vàng kích thích dopamine và cảm giác địa vị xã hội mạnh hơn bất kỳ màu kim loại nào khác.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span>Vàng Digital & Bitcoin</h4>
+        <p>Bitcoin thường được gọi là "vàng kỹ thuật số" vì tổng cung cố định (21 triệu BTC). Tuy nhiên, vàng vật chất vẫn được ưa chuộng hơn trong khủng hoảng thực sự — không cần điện, không bị hack. Cuộc tranh luận "vàng vs crypto" là chủ đề đầu tư nóng nhất thập kỷ.</p>
+      </div>
+      <div class="wide-card">
+        <h4><span class="dot"></span>Alchemy & Huyền Thoại</h4>
+        <p>Suốt Trung Cổ, các nhà giả kim thuật châu Âu và Ả Rập cố biến chì thành vàng — thất bại nhưng vô tình khám phá axit sulfuric, nước cường toan và nền tảng của hóa học hiện đại. Vàng là nguồn cảm hứng cho khoa học ra đời.</p>
+      </div>
+    </div>
+
+    <div class="ornamental-hr"><span>✦</span></div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--gold-light);margin:2rem 0 1rem;">Tương Lai Của Vàng</h3>
+
+    <p>Trong bối cảnh công nghệ phát triển vũ bão, vai trò của vàng không hề suy giảm — thậm chí ngày càng mở rộng. <strong>Khai thác vàng từ tiểu hành tinh</strong> đang là mục tiêu của các công ty không gian tư nhân như Planetary Resources. Một số tiểu hành tinh có trữ lượng kim loại quý đủ cung cấp cho Trái Đất hàng triệu năm.</p>
+
+    <p><strong>Công nghệ nano vàng</strong> đang cách mạng hóa y học: từ phân phối thuốc nhắm đích ung thư, xét nghiệm nhanh bệnh truyền nhiễm, đến tế bào thần kinh nhân tạo. Màu sắc của hạt nano vàng thay đổi theo kích thước — một tính chất không có ở bất kỳ vật liệu nào khác.</p>
+
+    <p>Cuối cùng, bất chấp sự nổi lên của tài sản số và tiền tệ fiat, vàng vẫn giữ một vị trí không thể thay thế trong tâm thức nhân loại: <strong>biểu tượng của sự bền vững, hiếm có và giá trị thực sự</strong>. Trong một thế giới ngày càng ảo hóa, chính sự vật chất, nặng và lấp lánh của vàng là lý do nó còn đây mãi mãi.</p>
+
+    <div class="pull-quote">
+      <p>"Vàng không biết nói dối. Đó là lý do tại sao cả loài người đều tin tưởng nó — qua mọi nền văn minh, mọi đế chế sụp đổ và mọi cuộc cách mạng."</p>
+    </div>
+  </section>
+
+</article>
+
+<footer>
+  <div class="footer-ornament">Aurum · Au · 79</div>
+  <div class="footer-title">Kim loại của thiên niên kỷ</div>
+  <div class="footer-copy">© 2025 — Bài báo chuyên đề về Vàng và Ứng Dụng</div>
+</footer>
+
+<script>
+  // Progress bar
+  const progressBar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (scrollTop / docHeight * 100) + '%';
+  });
+
+  // Navbar scroll
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 80);
+  });
+
+  // Intersection Observer for sections
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+  // Timeline items observer
+  const tlObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 120);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.timeline-item').forEach(t => tlObserver.observe(t));
+
+  // Particles
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left: ${Math.random() * 100}%;
+      width: ${Math.random() * 3 + 1}px;
+      height: ${Math.random() * 3 + 1}px;
+      animation-duration: ${Math.random() * 15 + 10}s;
+      animation-delay: ${Math.random() * 10}s;
+      opacity: ${Math.random() * 0.6};
+    `;
+    container.appendChild(p);
+  }
+
+  // Karat bar animation
+  const karatObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.karat-fill').forEach(el => {
+          const target = el.style.width;
+          el.style.width = '0%';
+          setTimeout(() => { el.style.width = target; }, 300);
+        });
+        karatObserver.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const karatSection = document.querySelector('#phan-loai');
+  if (karatSection) karatObserver.observe(karatSection);
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
